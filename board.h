@@ -2,8 +2,11 @@
 #define BOARD_H
 #include "cell.h"
 #include "textDisplay.h"
-//#include "graphicsDisplay.h"
+#ifdef ENABLE_GRAPHICS
+#include "graphicsDisplay.h"
+#endif
 #include "position.h"
+#include "piece.h"
 #include "move.h"
 #include "enumerated.h"
 #include <vector>
