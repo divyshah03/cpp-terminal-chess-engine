@@ -32,10 +32,19 @@ static PieceType parsePromotion(const string &text) {
 }
 
 Move HumanPlayer::getMove(Board *board) const {
-    string pos;
+    string line, fromText, toText, promoText;
 
-    char col1, col2 = '@';
-    char row1, row2 = -1;
+    // The rest of the line after the "move" command holds both squares
+    while (getline(cin, line)) {
+        istringstream iss{line};
+        if (iss >> fromText >> toText) {
+            iss >> promoText;
+            break;
+        }
+        cout << "Please enter both squares, for example: e2 e4" << endl;
+        fromText.clear();
+        toText.clear();
+    }
 
     // From position
     cin >> col1;
