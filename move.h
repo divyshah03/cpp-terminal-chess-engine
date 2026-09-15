@@ -12,7 +12,8 @@ class Move {
 
     public:
     Move(); // Default constructor that creates an invalid move
-    Move(Position from, Position to, PieceType pieceCaptured);
+    Move(Position from, Position to, PieceType pieceCaptured,
+         MoveType type = MoveType::NORMAL, PieceType promotion = PieceType::NONE);
     Position getFrom() const;
     Position getTo() const;
     PieceType getPieceType();
