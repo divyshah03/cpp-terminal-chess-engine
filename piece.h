@@ -13,7 +13,7 @@ class Piece {
     Piece(PieceType pieceType, Colour colour);
     PieceType getPieceType() const;
     Colour getColour() const;
-    bool hasMoved();
+    bool hasMoved() const;
     void incrementMoveCount();
     bool operator==(const Piece& other) const;
 };
