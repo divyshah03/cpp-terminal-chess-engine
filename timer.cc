@@ -47,9 +47,24 @@ void Timer::switchTurn() {
     player1Turn = !player1Turn;
 }
 
+bool Timer::expired() const {
+    return (player1_time == 0 || player2_time == 0);
+}
+
+bool Timer::whiteOutOfTime() const {
+    return (player1_time == 0);
+}
+
+bool Timer::blackOutOfTime() const {
+    return (player2_time == 0);
+}
+
 
 void Timer::printTime() {
     if (!waitingForInput) return;
+
+    int p1 = player1_time;
+    int p2 = player2_time;
 
     // Save cursor position
     cout << "\033[s";
