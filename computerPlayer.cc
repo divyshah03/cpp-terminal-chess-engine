@@ -60,29 +60,17 @@ int ComputerPlayer::scoreMove(Board *board, const Move &mv) const {
 }
 
 Move ComputerPlayer::getMove(Board *board) const {
-    Move ret;
-    vector<Move> validMoves;
-    vector<Move> opponentMoves;
-    vector<Position> positionsBetween;
-    PieceType checker;
-    bool blocker = false;
-    int num = 0;
+    vector<Move> validMoves = board->getMoves(getColour());
+    if (validMoves.empty()) return Move{};   // no legal move; Game reports it as invalid
 
-    if(getColour() == Colour::WHITE) {
-        validMoves = board->getWhiteMoves();
-        opponentMoves = board->getBlackMoves();
-    } else {
-        validMoves = board->getBlackMoves();
-        opponentMoves = board->getWhiteMoves();
+    if (level <= 1) {
+        static bool seeded = false;
+        if (!seeded) {                       // seed once, not on every move
+            srand(static_cast<unsigned>(time(nullptr)));
+            seeded = true;
+        }
+        return validMoves[rand() % validMoves.size()];
     }
-    
-    Position posKing;
-    switch(level){
-        case 1:
-            srand(time(0));
-            num = rand() % validMoves.size();
-            ret = validMoves[num];
-            break;
 
         case 3:
 
