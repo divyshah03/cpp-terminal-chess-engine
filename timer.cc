@@ -16,18 +16,21 @@ Timer::~Timer() {
 }
 
 void Timer::start() {
+    if (running) return;
     running = true;
     timer_thread = std::thread([this]() {
         while (running) {
             this_thread::sleep_for(std::chrono::seconds(1));
-            if (player1Turn && player1_time > 0) player1_time--;
-            else if (!player1Turn && player2_time > 0) player2_time--;
+            if (!running) break;
+
+            if (player1Turn && player1_time > 0) --player1_time;
+            else if (!player1Turn && player2_time > 0) --player2_time;
 
             printTime();
 
             if (player1_time == 0 || player2_time == 0) {
                 running = false;
-                cout << "\nTime's up!\n";
+                cout << "\nTime's up!\n" << flush;
             }
         }
     });
