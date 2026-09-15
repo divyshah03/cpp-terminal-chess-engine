@@ -1,9 +1,9 @@
 #include "computerPlayer.h"
 #include "position.h"
+#include <cstdlib>
+#include <ctime>
 #include <string>
-#include <stdlib.h>
-#include <sstream>
-#include <cstdio>   // for popen, pclose
+#include <vector>
 
 using namespace std;
 
