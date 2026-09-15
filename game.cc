@@ -166,7 +166,8 @@ bool Game::isSetupValid() {
     Board tempBoard;
     tempBoard.init(config);
 
-    if(tempBoard.isCheck()){
+    // Neither king may already be under attack
+    if(tempBoard.isCheck(Colour::WHITE) || tempBoard.isCheck(Colour::BLACK)){
         return false;
     }
     return true;
@@ -174,14 +175,39 @@ bool Game::isSetupValid() {
 
 
 bool Game::gameMove() {
-    Move mv = currentTurn->getMove(getBoard());
-    if(isValidMove(mv)){
-        cout << (board->getGrid())[mv.getFrom().getRowVector()][mv.getFrom().getColVector()].getPieceType() <<" moved from " << mv.getFrom() << " to " << mv.getTo() << endl;
-        return board->movePiece(mv);
-    } else {
-        return false;
+    if (!isStarted()) return false;
+
+    Move requested = currentTurn->getMove(getBoard());
+    Move mv;
+    if (!findLegalMove(requested, mv)) return false;
+
+    PieceType moved = board->getGrid()[mv.getFrom().getRowVector()][mv.getFrom().getColVector()].getPieceType();
+    if (!board->movePiece(mv)) return false;
+
+    cout << moved << " moved from " << mv.getFrom() << " to " << mv.getTo();
+    switch (mv.getMoveType()) {
+        case MoveType::CASTLE_KINGSIDE:  cout << " (castled kingside)"; break;
+        case MoveType::CASTLE_QUEENSIDE: cout << " (castled queenside)"; break;
+        case MoveType::ENPASSANT:        cout << " (en passant)"; break;
+        case MoveType::PROMOTION:        cout << " (promoted to " << mv.getPromotion() << ")"; break;
+        case MoveType::NORMAL:
+            if (mv.isCaptured()) cout << " (captured " << mv.getPieceType() << ")";
+            break;
     }
+    cout << endl;
+
+    switchTurn();
 
     // Print textdisplay
     board->printTD();
+    return true;
+}
+
+bool Game::undoMove() {
+    if (!isStarted()) return false;
+    if (!board->undoMove()) return false;
+
+    switchTurn();
+    board->printTD();
+    return true;
 }
