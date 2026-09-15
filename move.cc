@@ -2,10 +2,11 @@
 
 // Default constructor - creates invalid move
 Move::Move()
-    : from{Position{-1,'@'}}, to{Position{-1,'@'}}, pieceCaptured{PieceType::NONE} {}
+    : from{Position{}}, to{Position{}}, pieceCaptured{PieceType::NONE},
+      type{MoveType::NORMAL}, promotion{PieceType::NONE} {}
 
-Move::Move(Position from, Position to, PieceType pieceCaptured)
-     : from{from}, to{to}, pieceCaptured{pieceCaptured} {}
+Move::Move(Position from, Position to, PieceType pieceCaptured, MoveType type, PieceType promotion)
+     : from{from}, to{to}, pieceCaptured{pieceCaptured}, type{type}, promotion{promotion} {}
 
 Position Move::getFrom() const {
     return from;
