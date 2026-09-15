@@ -76,11 +76,11 @@ void Timer::printTime() {
     cout << "\033[2K";
 
     // Print timer
-    cout << "Timer -> Player 1: " << player1_time / 60 << ":"
-              << (player1_time % 60 < 10 ? "0" : "") << player1_time % 60
-              << " | Player 2: " << player2_time / 60 << ":"
-              << (player2_time % 60 < 10 ? "0" : "") << player2_time % 60
-              << " | " << (player1Turn ? "Player 1's turn" : "Player 2's turn")
+    cout << "Timer -> White: " << p1 / 60 << ":"
+              << (p1 % 60 < 10 ? "0" : "") << p1 % 60
+              << " | Black: " << p2 / 60 << ":"
+              << (p2 % 60 < 10 ? "0" : "") << p2 % 60
+              << " | " << (player1Turn ? "White's turn" : "Black's turn")
               << "     " << flush;
 
     // Restore cursor
