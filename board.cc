@@ -240,285 +240,194 @@ bool Board::isSquareAttacked(Position pos, Colour attacker) const {
         }
     }
 
-    whiteMoves.clear();
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            if (grid[i][j].getPiece().getColour() == Colour::WHITE) {
-                auto valid = grid[i][j].getAllValidMoves();
-                whiteMoves.insert(whiteMoves.end(), valid.begin(), valid.end());
+    // Bishops and queens along diagonals
+    for (const auto &[dr, dc] : BISHOP_DIRECTIONS) {
+        int r = row + dr, c = col + dc;
+        while (inBounds(r, c)) {
+            Piece p = pieceAt(r, c);
+            if (p.getPieceType() != PieceType::NONE) {
+                if (p.getColour() == attacker &&
+                    (p.getPieceType() == PieceType::BISHOP || p.getPieceType() == PieceType::QUEEN))
+                    return true;
+                break;
             }
+            r += dr;
+            c += dc;
         }
     }
 
-    blackMoves.clear();
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            if (grid[i][j].getPiece().getColour() == Colour::BLACK) {
-                auto valid = grid[i][j].getAllValidMoves();
-                blackMoves.insert(blackMoves.end(), valid.begin(), valid.end());
-            }
-        }
-    }
-}
-
-bool Board::movePiece(Move mv) {
-    movesPlayed.push_back(mv); // update moves played
-    Position from = mv.getFrom();
-    Position to = mv.getTo();
-
-    // Change king position if necessary
-    if(from == posBKing){
-        posBKing = to;
-    } else if (from == posWKing){
-        posWKing = to;
-    }
-
-    Piece capturingPiece = grid[from.getRowVector()][from.getColVector()].getPiece(); // moving piece
-    capturingPiece.incrementMoveCount();
-
-    // Setting from and to piece types and states
-    grid[from.getRowVector()][from.getColVector()].setPiece(Piece{PieceType::NONE, Colour::NONE});
-    grid[from.getRowVector()][from.getColVector()].setState(State{StateType::EmptyCell, Colour::NONE, PieceType::NONE, from, Direction::N});
-
-    grid[to.getRowVector()][to.getColVector()].setPiece(capturingPiece);
-    grid[to.getRowVector()][to.getColVector()].setState(State{StateType::NewPiece, capturingPiece.getColour(), 
-                                                        capturingPiece.getPieceType(), to, Direction::N});
-    
-    //Notify rest
-    grid[from.getRowVector()][from.getColVector()].notifyObservers();
-    grid[to.getRowVector()][to.getColVector()].notifyObservers();
-
-    // Change turn
-    currentTurn = (currentTurn == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
-
-    whiteMoves.clear();
-    for(int i = 0; i < 8; ++i) {
-        for(int j = 0; j < 8; ++j) {
-            if(grid[i][j].getPiece().getColour() == Colour::WHITE) {
-                whiteMoves.insert(whiteMoves.end(), grid[i][j].getAllValidMoves().begin(), grid[i][j].getAllValidMoves().end());
-            }
-        }
-    }
-
-    blackMoves.clear();
-    for(int i = 0; i < 8; ++i) {
-        for(int j = 0; j < 8; ++j) {
-            if(grid[i][j].getPiece().getColour() == Colour::BLACK) {
-                blackMoves.insert(blackMoves.end(), grid[i][j].getAllValidMoves().begin(), grid[i][j].getAllValidMoves().end());
-                cout << "Move inserted - black" << endl;
-            }
-        }
-    }
-    
-    return true; // Returns true if movePiece successful
-}
-
-bool Board::isCheck() {
-    //Going through a list to see if the piece attacked is ever a king
-    if(currentTurn == Colour::WHITE) {
-        for(Move mv : blackMoves) {
-            if(mv.isCaptured() && mv.getPieceType() == PieceType::KING)
-                return true;
-        }
-    }
-    else {
-        for(Move mv : whiteMoves) {
-            if(mv.isCaptured() && mv.getPieceType() == PieceType::KING)
-                return true;
-        }
-    }
     return false;
 }
 
-bool Board::isCheckmate() {
-    vector<Move> checkingMoves; // list of moves that are check
-    Colour checker;
-    if(currentTurn == Colour::WHITE) {
-        checker = Colour::BLACK; // this colour did the check - challenger
-        for(Move mv : blackMoves) {
-            if(mv.getPieceType() == PieceType::KING) {
-                checkingMoves.push_back(mv);
-            }
-        }
+void Board::addOffsetMoves(int row, int col, Colour side,
+                           const vector<pair<int,int>> &offsets, vector<Move> &moves) const {
+    for (const auto &[dr, dc] : offsets) {
+        int r = row + dr, c = col + dc;
+        if (!inBounds(r, c)) continue;
+        Piece target = pieceAt(r, c);
+        if (target.getColour() == side) continue;  // cannot capture our own piece
+        moves.push_back(Move{Position{row, col}, Position{r, c}, target.getPieceType()});
     }
-    else {
-        checker = Colour::WHITE;
-        for(Move mv : whiteMoves) {
-            if(mv.getPieceType() == PieceType::KING) {
-                checkingMoves.push_back(mv);
-            }
-        }
-    }
+}
 
-    //If no check, checkmate is false
-    if(checkingMoves.size() == 0)
-        return false;
-
-    vector<Move> kingValidMoves;
-    if(checker == Colour::WHITE) // checker is the attacker
-        kingValidMoves = grid[posBKing.getRowVector()][posBKing.getColVector()].getAllValidMoves();
-    else
-        kingValidMoves = grid[posWKing.getRowVector()][posWKing.getColVector()].getAllValidMoves();
-
-    //If more than one checker, king has to move
-    if(checkingMoves.size() > 1) {
-
-        // Now since we know the only valid moves are the kings moves, we can update the list of 
-        // valid moves accordingly
-        if(checker == Colour::WHITE) {
-            blackMoves.clear();
-            blackMoves = kingValidMoves;
-        }
-        else {
-            whiteMoves.clear();
-            whiteMoves = kingValidMoves;
-        }
-
-        //Checking Checkmate condition
-        if(checker == Colour::WHITE &&
-           (kingValidMoves.size() == 0))
-            return true;
-            
-        if(checker == Colour::BLACK &&
-           (kingValidMoves.size() == 0))
-            return true;
-        
-        // More than one attacker and king has space to move
-        return false;
-    }
-
-
-    //If knight is checker, king has to move (Only one knight can check at a time)
-    Move check = checkingMoves[0];
-    Position from = check.getFrom();
-    Position to = check.getTo();
-    if ((abs(to.getRow() - from.getRow()) == 2 && abs(to.getColInt() - from.getColInt()) == 1) ||
-    (abs(to.getRow() - from.getRow()) == 1 && abs(to.getColInt() - from.getColInt()) == 2)) {
-
-        vector<Move> tempValidMoves;
-
-        //Black King has no moves
-        if(checker == Colour::WHITE &&
-           kingValidMoves.size() == 0) {
-            for(Move mv : blackMoves) {
-                if(check.getFrom() == mv.getTo()) {
-                    tempValidMoves.push_back(mv);
-                }
-            }
-            if(tempValidMoves.size() > 0) {
-                blackMoves.clear();
-                blackMoves = tempValidMoves;
-                return false;
+void Board::addSlidingMoves(int row, int col, Colour side,
+                            const vector<pair<int,int>> &directions, vector<Move> &moves) const {
+    for (const auto &[dr, dc] : directions) {
+        int r = row + dr, c = col + dc;
+        while (inBounds(r, c)) {
+            Piece target = pieceAt(r, c);
+            if (target.getPieceType() == PieceType::NONE) {
+                moves.push_back(Move{Position{row, col}, Position{r, c}, PieceType::NONE});
             } else {
-                return true;
-            }
-           }
-        
-        //White King has no moves
-        else if(checker == Colour::BLACK &&
-           (kingValidMoves.size() == 0)) {
-            for(Move mv : whiteMoves) {
-                if(check.getFrom() == mv.getTo()) {
-                    tempValidMoves.push_back(mv);
+                if (target.getColour() != side) {
+                    moves.push_back(Move{Position{row, col}, Position{r, c}, target.getPieceType()});
                 }
+                break;  // the ray stops at the first piece
             }
-            if(tempValidMoves.size() > 0) {
-                whiteMoves.clear();
-                whiteMoves = tempValidMoves;
-                return false;
-            } else {
-                return true;
-            }
-           }
-
-        //Black King does have moves
-        else if(checker == Colour::WHITE) {
-            for(Move mv : blackMoves) {
-                if(check.getFrom() == mv.getTo()) {
-                    tempValidMoves.push_back(mv);
-                }
-            }
-
-            //Adding king's valid moves to the list
-            tempValidMoves.insert(tempValidMoves.end(), kingValidMoves.begin(), kingValidMoves.end());
-            blackMoves.clear();
-            blackMoves = tempValidMoves;
-            return false;
-        }
-
-        //White King does have moves
-        else {
-            for(Move mv : whiteMoves) {
-                if(check.getFrom() == mv.getTo()) {
-                    tempValidMoves.push_back(mv);
-                }
-            }
-
-            //Adding king's valid moves to the list
-            tempValidMoves.insert(tempValidMoves.end(), kingValidMoves.begin(), kingValidMoves.end());
-            whiteMoves.clear();
-            whiteMoves = tempValidMoves;
-            return false;
+            r += dr;
+            c += dc;
         }
     }
+}
 
-    vector<Move> tempValidMoves;
+// Adds one pawn move, expanding it into the four promotion choices when needed
+void Board::addPawnMove(int fromRow, int fromCol, int toRow, int toCol,
+                        PieceType captured, Colour side, vector<Move> &moves) const {
+    int promoRow = (side == Colour::WHITE) ? GRID_SIZE - 1 : 0;
+    Position from{fromRow, fromCol};
+    Position to{toRow, toCol};
 
-    // Adding the moves that capture the attacker 
-    if(checker == Colour::WHITE){
-        for(Move mv: blackMoves){
-            if(check.getFrom() == mv.getTo()) {
-                tempValidMoves.push_back(mv);
-            }
+    if (toRow == promoRow) {
+        for (PieceType promo : {PieceType::QUEEN, PieceType::ROOK,
+                                PieceType::BISHOP, PieceType::KNIGHT}) {
+            moves.push_back(Move{from, to, captured, MoveType::PROMOTION, promo});
         }
     } else {
-        for(Move mv: whiteMoves){
-            if(check.getFrom() == mv.getTo()) {
-                tempValidMoves.push_back(mv);
-            }
+        moves.push_back(Move{from, to, captured});
+    }
+}
+
+void Board::addPawnMoves(int row, int col, Colour side, vector<Move> &moves) const {
+    int dir = (side == Colour::WHITE) ? 1 : -1;
+    int startRow = (side == Colour::WHITE) ? 1 : GRID_SIZE - 2;
+    int oneStep = row + dir;
+
+    // Straight ahead, only onto an empty square
+    if (inBounds(oneStep, col) && isEmpty(oneStep, col)) {
+        addPawnMove(row, col, oneStep, col, PieceType::NONE, side, moves);
+
+        int twoStep = row + 2 * dir;
+        if (row == startRow && inBounds(twoStep, col) && isEmpty(twoStep, col)) {
+            moves.push_back(Move{Position{row, col}, Position{twoStep, col}, PieceType::NONE});
         }
     }
 
-    // check is still the only move checking it. So we find all positions between the from and to
-    // positions of this move and check which valid move can get in the way (including capture)
-    vector<Position> positions = Position::getAllPositions(from, to);
+    // Diagonals, only onto an enemy piece or an en passant square
+    for (int dc : {-1, 1}) {
+        int c = col + dc;
+        if (!inBounds(oneStep, c)) continue;
+        Piece target = pieceAt(oneStep, c);
 
-    // Now positions contains all the list of positions where it can be blocked.
-    // Hence all moves where a piece can enter this square is valid
-    if(checker == Colour::BLACK) {
-        for(Move mv : whiteMoves) {
-            for(Position pos : positions) {
-                if(mv.getTo() == pos)
-                    tempValidMoves.push_back(mv);
+        if (target.getPieceType() != PieceType::NONE) {
+            if (target.getColour() != side) {
+                addPawnMove(row, col, oneStep, c, target.getPieceType(), side, moves);
+            }
+        } else if (epTarget.isOnBoard() && epVictim.isOnBoard() &&
+                   epTarget == Position{oneStep, c}) {
+            Piece victim = pieceAt(epVictim.getRowVector(), epVictim.getColVector());
+            if (victim.getPieceType() == PieceType::PAWN && victim.getColour() != side) {
+                moves.push_back(Move{Position{row, col}, Position{oneStep, c},
+                                     PieceType::PAWN, MoveType::ENPASSANT});
             }
         }
-    } else {
-        for(Move mv : blackMoves) {
-            for(Position pos : positions) {
-                if(mv.getTo() == pos)
-                    tempValidMoves.push_back(mv);
+    }
+}
+
+void Board::addCastlingMoves(int row, int col, Colour side, vector<Move> &moves) const {
+    int homeRow = (side == Colour::WHITE) ? 0 : GRID_SIZE - 1;
+    if (row != homeRow || col != 4) return;              // king must be on its original square
+    if (pieceAt(row, col).hasMoved()) return;
+    Colour attacker = opponentOf(side);
+    if (isSquareAttacked(Position{row, col}, attacker)) return;  // cannot castle out of check
+
+    // Kingside: rook on h-file, f and g empty, king does not cross an attacked square
+    Piece kingsideRook = pieceAt(homeRow, GRID_SIZE - 1);
+    if (kingsideRook.getPieceType() == PieceType::ROOK && kingsideRook.getColour() == side &&
+        !kingsideRook.hasMoved() && isEmpty(homeRow, 5) && isEmpty(homeRow, 6) &&
+        !isSquareAttacked(Position{homeRow, 5}, attacker) &&
+        !isSquareAttacked(Position{homeRow, 6}, attacker)) {
+        moves.push_back(Move{Position{homeRow, 4}, Position{homeRow, 6},
+                             PieceType::NONE, MoveType::CASTLE_KINGSIDE});
+    }
+
+    // Queenside: rook on a-file, b, c and d empty
+    Piece queensideRook = pieceAt(homeRow, 0);
+    if (queensideRook.getPieceType() == PieceType::ROOK && queensideRook.getColour() == side &&
+        !queensideRook.hasMoved() && isEmpty(homeRow, 1) && isEmpty(homeRow, 2) &&
+        isEmpty(homeRow, 3) &&
+        !isSquareAttacked(Position{homeRow, 3}, attacker) &&
+        !isSquareAttacked(Position{homeRow, 2}, attacker)) {
+        moves.push_back(Move{Position{homeRow, 4}, Position{homeRow, 2},
+                             PieceType::NONE, MoveType::CASTLE_QUEENSIDE});
+    }
+}
+
+vector<Move> Board::pseudoLegalMoves(Colour side) const {
+    vector<Move> moves;
+    if (grid.empty()) return moves;
+
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            Piece piece = pieceAt(row, col);
+            if (piece.getColour() != side || piece.getPieceType() == PieceType::NONE) continue;
+
+            switch (piece.getPieceType()) {
+                case PieceType::PAWN:
+                    addPawnMoves(row, col, side, moves);
+                    break;
+                case PieceType::KNIGHT:
+                    addOffsetMoves(row, col, side, KNIGHT_OFFSETS, moves);
+                    break;
+                case PieceType::KING:
+                    addOffsetMoves(row, col, side, KING_OFFSETS, moves);
+                    addCastlingMoves(row, col, side, moves);
+                    break;
+                case PieceType::ROOK:
+                    addSlidingMoves(row, col, side, ROOK_DIRECTIONS, moves);
+                    break;
+                case PieceType::BISHOP:
+                    addSlidingMoves(row, col, side, BISHOP_DIRECTIONS, moves);
+                    break;
+                case PieceType::QUEEN:
+                    addSlidingMoves(row, col, side, ROOK_DIRECTIONS, moves);
+                    addSlidingMoves(row, col, side, BISHOP_DIRECTIONS, moves);
+                    break;
+                case PieceType::NONE:
+                    break;
             }
-        } 
-    }
-
-    // Adding the King's valid moves
-    tempValidMoves.insert(tempValidMoves.end(), kingValidMoves.begin(), kingValidMoves.end());
-
-    //Checking if there are any valid moves for that side to play;
-    if(tempValidMoves.size() == 0)
-        return true;
-    else {
-        if(checker == Colour::WHITE) {
-            blackMoves.clear();
-            blackMoves = tempValidMoves;
         }
-        else {
-            whiteMoves.clear();
-            whiteMoves = tempValidMoves;
-        }
-        return false;
     }
+    return moves;
+}
 
+// Keeps only the moves that do not leave (or place) our own king in check.
+// This is what makes pins, blocks and forced king moves work.
+vector<Move> Board::legalMoves(Colour side) {
+    vector<Move> result;
+    if (grid.empty()) return result;
+
+    Snapshot snap = snapshot();
+    for (const Move &mv : pseudoLegalMoves(side)) {
+        applyMove(mv, false);
+        if (!isCheck(side)) result.push_back(mv);
+        restore(snap);
+    }
+    return result;
+}
+
+void Board::generateAllMoves() {
+    whiteMoves = legalMoves(Colour::WHITE);
+    blackMoves = legalMoves(Colour::BLACK);
 }
 
 bool Board::isStalemate() {
