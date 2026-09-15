@@ -32,6 +32,15 @@ bool Move::isCaptured() const {
     return (pieceCaptured != PieceType::NONE);
 }
 
+bool Move::isValid() const {
+    return from.isOnBoard() && to.isOnBoard() && !(from == to);
+}
+
+bool Move::sameSquares(const Move& other) const {
+    return (from == other.from && to == other.to);
+}
+
 bool Move::operator==(const Move& other) const{
-   return (from == other.from && to == other.to && pieceCaptured == other.pieceCaptured);
+   return (from == other.from && to == other.to && pieceCaptured == other.pieceCaptured &&
+           type == other.type && promotion == other.promotion);
 }
