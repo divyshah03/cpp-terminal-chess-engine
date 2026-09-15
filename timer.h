@@ -8,9 +8,9 @@
 #include <string>
 
 class Timer {
-    int player1_time;
-    int player2_time;
-    bool player1Turn;
+    std::atomic<int> player1_time;
+    std::atomic<int> player2_time;
+    std::atomic<bool> player1Turn;
     std::atomic<bool> running;
     std::thread timer_thread;
 
