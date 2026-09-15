@@ -14,7 +14,7 @@ Cell::Cell()
 Cell::Cell(Position position, Piece occupant)
      : position{position}, occupant{occupant} {}
 
-Position Cell::getPosition() {
+Position Cell::getPosition() const {
     return position;
 }
 
@@ -26,18 +26,20 @@ void Cell::setPiece(Piece piece) {
     occupant = piece;
 }
 
-vector <Move> Cell::getAllValidMoves() {
-    return allValidMoves;
-}
-
-bool Cell::isOccupied() {
+bool Cell::isOccupied() const {
     return (occupant.getPieceType() != PieceType::NONE);
 }
 
 Info Cell::getInfo() const {
-    Colour col = occupant.getColour();
-    Info in{position, col, occupant.getPieceType()};
-    return in;
+    return Info{position, occupant.getColour(), occupant.getPieceType()};
+}
+
+PieceType Cell::getPieceType() const {
+    return occupant.getPieceType();
+}
+
+Colour Cell::getColour() const {
+    return occupant.getColour();
 }
 
 void Cell::setCell(Info info, State state) {
