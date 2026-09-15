@@ -62,7 +62,7 @@ bool Position::operator==(const Position& other) const{
 }
 
 ostream &operator<<(std::ostream &out, const Position &pos){
-    cout << pos.getColChar() << pos.getRow();
+    out << pos.getColChar() << pos.getRow();
     return out;
 }
 
