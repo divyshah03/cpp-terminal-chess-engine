@@ -22,8 +22,8 @@ class Cell : public Subject {
     void setPiece(Piece piece);
     bool isOccupied() const;
     Info getInfo() const override;
-    void notify(Subject &from) override;
     PieceType getPieceType() const;
+    Colour getColour() const;
     void setCell(Info info, State state);
 };
 
