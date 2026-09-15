@@ -22,7 +22,11 @@ public:
     void start();       // Starts the countdown and listens for input
     void stop();        // Stops the timer
     void printTime();   // Prints current time left for both players
-    void switchTurn();   // Switches turn between players
+    void switchTurn();  // Switches turn between players
+
+    bool expired() const;          // has either clock run out?
+    bool whiteOutOfTime() const;   // player 1 is white
+    bool blackOutOfTime() const;
 };
 
 #endif
