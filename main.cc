@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,6 +18,98 @@ void printConfig(const vector<vector<char>> &config) {
         cout << endl;
     }
     cout << "\n   a b c d e f g h\n" << endl;
+}
+
+// Throws away the remainder of the current input line, so that extra words are
+// not picked up as the next command
+static void discardRestOfLine() {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
+
+static string toLower(string text) {
+    transform(text.begin(), text.end(), text.begin(),
+              [](unsigned char c){ return tolower(c); });
+    return text;
+}
+
+// Accepts -bonus, -enablebonus and -enableBonus
+static bool isBonusFlag(const string &arg) {
+    string flag = toLower(arg);
+    return (flag == "-bonus" || flag == "-enablebonus");
+}
+
+static bool isValidPlayerName(const string &name) {
+    return (name == "human" || name == "computer1" || name == "computer2" ||
+            name == "computer3" || name == "computer4");
+}
+
+// Prints the session score and the overall winner, used whenever the user quits
+static void printSessionScore(Game &game) {
+    cout << "Final score:" << endl;
+    cout << "White: " << game.getWhiteWins() << endl;
+    cout << "Black: " << game.getBlackWins() << endl;
+    if (game.getWhiteWins() > game.getBlackWins()) {
+        cout << "White wins the session!" << endl;
+    } else if (game.getWhiteWins() < game.getBlackWins()) {
+        cout << "Black wins the session!" << endl;
+    } else {
+        cout << "Session is a draw!" << endl;
+    }
+}
+
+// Runs the checks that follow a completed move. Returns true when the game is over.
+// The timer pointer is null unless the bonus features are enabled.
+static bool finishTurn(Game &game, Timer *timer) {
+    if (timer) {
+        timer->switchTurn();
+        timer->printTime();
+    }
+
+    if (game.getBoard()->isCheckmate()) {
+        if (timer) timer->stop();
+        if (game.getCurrentTurn()->getColour() == Colour::WHITE) {
+            cout << "Checkmate! Black wins!" << endl;
+            cout << "Better luck next time: white! Don't worry, every grandmaster was once a beginner!" << endl;
+            game.incrementBlackWins(1);
+        } else {
+            cout << "Checkmate! White wins!" << endl;
+            cout << "Better luck next time: black! Don't worry, every grandmaster was once a beginner!" << endl;
+            game.incrementWhiteWins(1);
+        }
+        return true;
+    }
+
+    if (game.getBoard()->isStalemate()) {
+        if (timer) timer->stop();
+        cout << "Stalemate!" << endl;
+        cout << "It's a draw!" << endl;
+        game.incrementWhiteWins(0.5);
+        game.incrementBlackWins(0.5);
+        return true;
+    }
+
+    if (game.getBoard()->isCheck()) {
+        if (game.getCurrentTurn()->getColour() == Colour::WHITE) {
+            cout << "Check! White is in check!" << endl;
+        } else {
+            cout << "Check! Black is in check!" << endl;
+        }
+    }
+
+    // A player who runs out of time loses the game
+    if (timer && timer->expired()) {
+        timer->stop();
+        if (timer->whiteOutOfTime()) {
+            cout << "White ran out of time. Black wins!" << endl;
+            game.incrementBlackWins(1);
+        } else {
+            cout << "Black ran out of time. White wins!" << endl;
+            game.incrementWhiteWins(1);
+        }
+        return true;
+    }
+
+    return false;
 }
 
 int main(int argc, char* argv[]){
