@@ -286,7 +286,23 @@ int main(int argc, char* argv[]){
                         cout << "Invalid move, try again" << endl;
                         continue;
                     }  
+                } else if (game_cmd == "undo"){
+                    discardRestOfLine();
+                    if(game.undoMove()){
+                        if(timerPtr) timerPtr->switchTurn();
+
+                        // Against the computer, take back its reply as well so that
+                        // the move comes back to the person playing
+                        if(humanInGame && !game.getCurrentTurn()->usesTerminalInput() && game.undoMove()){
+                            if(timerPtr) timerPtr->switchTurn();
+                        }
+                        cout << "Last move taken back." << endl;
+                    } else {
+                        cout << "There is no move to undo." << endl;
+                    }
+                    continue;
                 } else if (game_cmd == "resign"){
+                    discardRestOfLine();
                     if(enableBonus && timer) timer->stop();
                     if(game.getCurrentTurn()->getColour() == Colour::WHITE){
                         cout << "Game over!" << endl;
@@ -302,10 +318,13 @@ int main(int argc, char* argv[]){
                         break;
                     }
                 } else {
+                    discardRestOfLine();
                     cout << "Invalid Command, try again" << endl;
                     continue;
                 }
             } // while loop for game commands
+
+            if(enableBonus && timer) timer->stop();
         } else if (cmd == "setup") {
 
             cout << "--------------------------------------------------" << endl;
@@ -323,17 +342,8 @@ int main(int argc, char* argv[]){
                 cin >> setup_cmd;
 
                 if (cin.eof()) {
-                    cout << "Final score:" << endl;
-                    cout << "White: " << game.getWhiteWins() << endl;
-                    cout << "Black: " << game.getBlackWins() << endl;
+                    printSessionScore(game);
                     if(enableBonus && timer) timer->stop();
-                    if(game.getWhiteWins() > game.getBlackWins()){
-                        cout << "White wins the session!" << endl;
-                    } else if(game.getWhiteWins() < game.getBlackWins()){
-                        cout << "Black wins the session!" << endl;
-                    } else {
-                        cout << "Session is a draw!" << endl;
-                    }
                     cin.clear();
                     return 0;
                 }
@@ -363,7 +373,7 @@ int main(int argc, char* argv[]){
 
                             game.config[rowIndex][colIndex] = piece;
                             printConfig(game.config);
-                            cout << "Piece" << piece << " placed at " << position << endl;
+                            cout << "Piece " << piece << " placed at " << position << endl;
                         } else {
                             cout << "Invalid Command, position is not valid" << endl;
                         }
@@ -448,6 +458,7 @@ int main(int argc, char* argv[]){
             cout << "      - computer1 (Beginner)" << endl;
             cout << "      - computer2 (Intermediate)" << endl;
             cout << "      - computer3 (Advanced)" << endl;
+            cout << "      - computer4 (Expert)" << endl;
             cout << endl;
             cout << "To enter setup mode (customize the board):" << endl;
             cout << "  setup" << endl;
@@ -459,6 +470,8 @@ int main(int argc, char* argv[]){
             cout << endl;
             cout << "During a game, you can use:" << endl;
             cout << "  move <from> <to>         (move a piece, e.g., move e2 e4)" << endl;
+            cout << "  move <from> <to> <piece> (promote a pawn, e.g., move e7 e8 Q)" << endl;
+            cout << "  undo                     (take back the last move)" << endl;
             cout << "  resign                   (concede the game)" << endl;
             cout << endl;
             cout << "At any time, you can use:" << endl;
