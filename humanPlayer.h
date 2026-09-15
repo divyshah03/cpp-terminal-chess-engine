@@ -9,6 +9,7 @@ class HumanPlayer : public Player {
     public:
     HumanPlayer(Colour colour);
     Move getMove(Board *board) const override;
+    bool usesTerminalInput() const override;
 };
 
 #endif
