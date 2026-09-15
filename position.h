@@ -27,6 +27,9 @@ class Position{
     void setColInt(int newC);
     void setRowInt(int newR);
 
+    // True when this position refers to a real square (a1 - h8)
+    bool isOnBoard() const;
+
     // Operator Overload
     bool operator==(const Position& other) const;
 
