@@ -15,15 +15,12 @@ class Cell : public Subject {
     Piece occupant;
 
     public:
-    void Reset(); // helper function
-    bool isProtected = false;
-    Cell(); // default constructor
+    Cell(); // default constructor - only for resizing in Board
     Cell(Position position, Piece occupant);
-    Position getPosition();
+    Position getPosition() const;
     Piece getPiece() const;
     void setPiece(Piece piece);
-    std::vector <Move> getAllValidMoves();
-    bool isOccupied();
+    bool isOccupied() const;
     Info getInfo() const override;
     void notify(Subject &from) override;
     PieceType getPieceType() const;
