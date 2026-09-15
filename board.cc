@@ -430,14 +430,85 @@ void Board::generateAllMoves() {
     blackMoves = legalMoves(Colour::BLACK);
 }
 
-bool Board::isStalemate() {
-    if(currentTurn == Colour::WHITE)
-        return (0 == whiteMoves.size());
-    else
-        return (0 == blackMoves.size());
+bool Board::movePiece(Move mv) {
+    if (grid.empty() || !mv.isValid()) return false;
+
+    history.push_back(snapshot());
+    movesPlayed.push_back(mv);
+
+    applyMove(mv, true);
+
+    currentTurn = opponentOf(currentTurn);
+
+    refreshDisplay();
+    generateAllMoves();
+    return true;
 }
 
-const vector<vector<Cell>>& Board::getGrid(){
+bool Board::undoMove() {
+    if (history.empty()) return false;
+
+    restore(history.back());
+    history.pop_back();
+    if (!movesPlayed.empty()) movesPlayed.pop_back();
+
+    refreshDisplay();
+    generateAllMoves();
+    return true;
+}
+
+bool Board::isCheck(Colour side) const {
+    Position king = (side == Colour::WHITE) ? posWKing : posBKing;
+    return isSquareAttacked(king, opponentOf(side));
+}
+
+bool Board::isCheck() const {
+    return isCheck(currentTurn);
+}
+
+bool Board::wouldGiveCheck(const Move &mv) {
+    if (grid.empty() || !mv.isValid()) return false;
+    Colour mover = pieceAt(mv.getFrom().getRowVector(), mv.getFrom().getColVector()).getColour();
+    if (mover == Colour::NONE) return false;
+
+    Snapshot snap = snapshot();
+    applyMove(mv, false);
+    bool result = isCheck(opponentOf(mover));
+    restore(snap);
+    return result;
+}
+
+bool Board::isAttackedAfter(const Move &mv, Position pos, Colour attacker) {
+    if (grid.empty() || !mv.isValid()) return false;
+
+    Snapshot snap = snapshot();
+    applyMove(mv, false);
+    bool result = isSquareAttacked(pos, attacker);
+    restore(snap);
+    return result;
+}
+
+int Board::opponentReplyCount(const Move &mv) {
+    if (grid.empty() || !mv.isValid()) return 0;
+    Colour mover = pieceAt(mv.getFrom().getRowVector(), mv.getFrom().getColVector()).getColour();
+    if (mover == Colour::NONE) return 0;
+
+    Snapshot snap = snapshot();
+    applyMove(mv, false);
+    int result = static_cast<int>(pseudoLegalMoves(opponentOf(mover)).size());
+    restore(snap);
+    return result;
+}
+
+bool Board::isCheckmate() const {
+    return (isCheck() && getMoves(currentTurn).empty());
+}
+
+bool Board::isStalemate() const {
+    return (!isCheck() && getMoves(currentTurn).empty());
+}
+
+const vector<vector<Cell>>& Board::getGrid() const {
     return grid;
 }
 
@@ -445,7 +516,7 @@ void Board::setCurrentTurn(Colour colour) {
     currentTurn = colour;
 }
 
-Colour Board::getCurrentTurn() {
+Colour Board::getCurrentTurn() const {
     return currentTurn;
 }
 
@@ -454,27 +525,32 @@ void Board::pushMove(Move mv) {
 }
 
 Move Board::popMove() {
-    int last = movesPlayed.size() - 1;
+    if (movesPlayed.empty()) return Move{};
+    Move last = movesPlayed.back();
     movesPlayed.pop_back();
-    return movesPlayed[last];
+    return last;
 }
 
-vector<Move> Board::getBlackMoves() {
+vector<Move> Board::getBlackMoves() const {
     return blackMoves;
 }
 
-vector<Move> Board::getWhiteMoves() {
+vector<Move> Board::getWhiteMoves() const {
     return whiteMoves;
 }
 
-Position Board::getBKing() {
+vector<Move> Board::getMoves(Colour side) const {
+    return (side == Colour::WHITE) ? whiteMoves : blackMoves;
+}
+
+Position Board::getBKing() const {
     return posBKing;
 }
 
-Position Board::getWKing() {
+Position Board::getWKing() const {
     return posWKing;
 }
 
-void Board::printTD(){
-    cout << *td << endl;
+void Board::printTD() const {
+    if (td) cout << *td << endl;
 }
