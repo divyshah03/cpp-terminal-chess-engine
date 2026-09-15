@@ -1,33 +1,38 @@
-# Chess Game
+# ♟️ Chess Game
 
-A terminal and graphics based two-player chess game written in modern C++20. Includes support for human vs. human play, human vs computer play, customizable board setup, basic AI using a stockfish chess engine, and optional enhancements such as a countdown timer for competitive play and undo moves.
+A terminal based chess game written in modern C++20. Play a friend, play the computer, set up any position you like, take back moves, and put a clock on the game. An X11 board window is available as an optional build. 🎉
 
 ---
 
 ## 🔧 Features
 
-- Fully functional chess engine with move validation
-- Text-based UI with graphical display (via X11)
-- Supports standard chess rules: check, checkmate, stalemate, en passant, castling, and promotion
-- Command-line setup mode for custom board configuration
-- Timer feature with Blitz, Rapid, and Classical modes
-- Human vs Human and Human vs Computer modes
-- Uses Smart Pointers everywhere possible
+- ♜ Fully functional chess engine with move validation and king safety
+- 🖨️ Text based board display, plus an optional graphical display (via X11)
+- 📜 Standard chess rules: check, checkmate, stalemate, en passant, castling, and promotion
+- 🛠️ Command-line setup mode for custom board configuration
+- ↩️ Undo, to take back the last move
+- ⏱️ Optional timer for each player, with any time control you like
+- 🧑‍🤝‍🧑 Human vs Human, and 🤖 Human vs Computer with four difficulty levels
+- 🧠 Uses smart pointers everywhere possible
 
 ---
 
 ## 🖥️ How to Build
 
-### Requirements
+### 📦 Requirements
 
-- g++-14 or later with C++20 support
-- X11 libraries 
-- Linux/macOS or WSL (Windows Subsystem for Linux)
+- Any C++20 compiler (`g++` 11 or later, or `clang++`)
+- Linux, macOS or WSL (Windows Subsystem for Linux)
+- X11 development libraries, only for the optional graphical display
 
-### Build
+### 🔨 Build
 
-- make for compiling the entire game
-- make clean for cleaning up the compiled files
+| Command | What it does |
+|---|---|
+| `make` | 🏗️ Compiles the game and produces `./chess` |
+| `make clean` | 🧹 Removes the compiled files |
+| `make CXX=clang++` | 🔁 Builds with a different compiler |
+| `make GRAPHICS=1` | 🪟 Also builds the X11 board window (needs the X11 libraries) |
 
 ---
 
