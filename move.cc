@@ -16,11 +16,19 @@ Position Move::getTo() const {
     return to;
 }
 
-PieceType Move::getPieceType() {
+PieceType Move::getPieceType() const {
     return pieceCaptured;
 }
 
-bool Move::isCaptured() {
+MoveType Move::getMoveType() const {
+    return type;
+}
+
+PieceType Move::getPromotion() const {
+    return promotion;
+}
+
+bool Move::isCaptured() const {
     return (pieceCaptured != PieceType::NONE);
 }
 
