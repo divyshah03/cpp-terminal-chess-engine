@@ -241,10 +241,24 @@ int main(int argc, char* argv[]){
 
             // Game loop
             while(true){
+                if (humanInGame && !game.getCurrentTurn()->usesTerminalInput()) {
+                    cout << "The computer is thinking..." << endl;
+                    if (!game.gameMove()) {
+                        cout << "The computer has no legal move to play." << endl;
+                        break;
+                    }
+                    if (finishTurn(game, timerPtr)) break;
+                    continue;
+                }
+
+                cout << "It is " << (game.getCurrentTurn()->getColour() == Colour::WHITE ? "white" : "black")
+                     << "'s turn." << endl;
                 cout << "Enter a command: " << endl;
                 cout << "Your choices are: " << endl;
-                cout << "move <from> <to>" << endl;
+                cout << "move <from> <to> [promotion piece]" << endl;
+                cout << "undo" << endl;
                 cout << "resign" << endl;
+                if (!humanInGame) cout << "(type move to let the computer play its turn)" << endl;
                 cout << "To see the current score: Ctrl + D" << endl;
                 cout << "--------------------------------------------------" << endl;
 
@@ -254,59 +268,20 @@ int main(int argc, char* argv[]){
                 if (enableBonus && timer) timer->waitingForInput = false;
 
                 if (cin.eof()) {
-                    cout << "Final score:" << endl;
-                    cout << "White: " << game.getWhiteWins() << endl;
-                    cout << "Black: " << game.getBlackWins() << endl;
+                    printSessionScore(game);
                     if(enableBonus && timer) timer->stop();
-                    if(game.getWhiteWins() > game.getBlackWins()){
-                        cout << "White wins the session!" << endl;
-                    } else if(game.getWhiteWins() < game.getBlackWins()){
-                        cout << "Black wins the session!" << endl;
-                    } else {
-                        cout << "Session is a draw!" << endl;
-                    }
                     cin.clear();
                     return 0;
                 }
 
                 // Handling move command here.
                 if (game_cmd == "move"){
+                    // A computer picks its own move, so drop anything typed after
+                    // the command instead of reading it as the next command
+                    if (!game.getCurrentTurn()->usesTerminalInput()) discardRestOfLine();
+
                     if(game.gameMove()){
-                        if(enableBonus && timer) timer->switchTurn();
-                        if(enableBonus && timer) timer->printTime();
-
-                        if(game.getBoard()->isCheckmate()){
-                            if(enableBonus && timer) timer->stop();
-                            if(game.getCurrentTurn()->getColour() == Colour::WHITE){
-                                cout << "Checkmate! Black wins!" << endl;
-                                cout << "Better luck next time: white! Don't worry, every grandmaster was once a beginner!" << endl;
-                                game.incrementBlackWins(1);
-                                break;
-                            } else {
-                                cout << "Checkmate! White wins!" << endl;
-                                cout << "Better luck next time: black! Don't worry, every grandmaster was once a beginner!" << endl;
-                                game.incrementWhiteWins(1);
-                                break;
-                            }
-                        }
-    
-                        if(game.getBoard()->isStalemate()){
-                            if(enableBonus && timer) timer->stop();
-                            cout << "Stalemate!" << endl;
-                            cout << "It's a draw!" << endl;
-                            game.incrementWhiteWins(0.5);
-                            game.incrementBlackWins(0.5);
-                            break;
-                        }
-    
-                        if(game.getBoard()->isCheck()){
-                            if(game.getCurrentTurn()->getColour() == Colour::WHITE){
-                                cout << "Check! White is in check!" << endl;
-                            } else {
-                                cout << "Check! Black is in check!" << endl;
-                            }
-                        }
-
+                        if (finishTurn(game, timerPtr)) break;
                     } else {
                         cout << "Invalid move, try again" << endl;
                         continue;
