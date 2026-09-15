@@ -46,18 +46,13 @@ Move HumanPlayer::getMove(Board *board) const {
         toText.clear();
     }
 
-    // From position
-    cin >> col1;
-    cin >> row1;
+    Position from = parseSquare(fromText);
+    Position to = parseSquare(toText);
+    if (!from.isOnBoard() || !to.isOnBoard()) {
+        cout << "That is not a square on the board." << endl;
+        return Move{};   // invalid move; Game rejects it
+    }
 
-    // To position
-    cin >> col2;
-    cin >> row2;
-
-    Position from{row1, col1};
-    Position to{row2, col2};
-
-    PieceType pt = board->getGrid()[to.getRowVector()][to.getColVector()].getPieceType();
-    Move mv{from, to, pt};
-    return mv;
+    PieceType captured = board->getGrid()[to.getRowVector()][to.getColVector()].getPieceType();
+    return Move{from, to, captured, MoveType::NORMAL, parsePromotion(promoText)};
 }
