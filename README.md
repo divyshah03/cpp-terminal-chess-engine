@@ -139,7 +139,3 @@ on the first or last row, and neither king is already under attack.
 | ⏱️ Timer | `timer` |
 
 ---
-
-## 🧑‍💻 Authors
-
-This project was built by Divy, Kshaman and Siddh. 🙌
