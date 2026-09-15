@@ -10,6 +10,7 @@ class Subject {
     State state;
 
     public:
+    virtual ~Subject() = default;
     void setState(State newS);
     void attach(Observer *ob);
     void notifyObservers();
