@@ -4,36 +4,15 @@
 #include "enumerated.h"
 #include "state.h"
 #include "move.h"
-#include <cstdlib>
-#include <iostream>
 
 using namespace std;
-
-void printMoveToPosition(const Move &mv) {
-    Position to = mv.getTo();
-    std::cout << "To Position: (" << to.getRow() << ", " << to.getColChar() << ")" << std::endl;
-}
-
-const vector<Direction> KingAttackDir = {Direction::N, Direction::NE, Direction::E, Direction::SE, 
-                                        Direction::S, Direction::SW, Direction::W, Direction::NW};
-const vector<Direction> QueenAttackDir = {Direction::N, Direction::NE, Direction::E, Direction::SE, 
-                                        Direction::S, Direction::SW, Direction::W, Direction::NW};
-const vector<Direction> RookAttackDir = {Direction::N, Direction::E, Direction::S, Direction::W};
-const vector<Direction> BishopAttackDir = {Direction::NE, Direction::SE, Direction::SW, Direction::NW};
-const vector<Direction> KnightAttackDir = {Direction::KNIGHT};
-const vector<Direction> BPawnAttackDir = {Direction::SE, Direction::SW};
-const vector<Direction> WPawnAttackDir = {Direction::NE, Direction::NW};
-const vector<Direction> NoneAttackDir = {};
 
 // Default constructor - only for resizing in Board
 Cell::Cell()
     : occupant{PieceType::NONE, Colour::NONE} {}
 
 Cell::Cell(Position position, Piece occupant)
-     : position{position}, occupant{occupant} {
-        vector <Move> validList;
-        allValidMoves = validList;
-     }
+     : position{position}, occupant{occupant} {}
 
 Position Cell::getPosition() {
     return position;
