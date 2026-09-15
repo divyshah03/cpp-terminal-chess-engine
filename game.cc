@@ -80,29 +80,8 @@ void Game::start(string player1, string player2, Colour colour) {
     board.reset();
     currentTurn = nullptr;
 
-    if(player1 == "human"){
-        whitePlayer = make_unique<HumanPlayer>(Colour::WHITE);
-    } else if(player1 == "computer1"){
-        whitePlayer = make_unique<ComputerPlayer>(Colour::WHITE, 1);
-    } else if(player1 == "computer2"){
-        whitePlayer = make_unique<ComputerPlayer>(Colour::WHITE, 2);
-    } else if(player1 == "computer3"){
-        whitePlayer = make_unique<ComputerPlayer>(Colour::WHITE, 3);
-    } else{
-        whitePlayer = make_unique<ComputerPlayer>(Colour::WHITE, 4);
-    }
-
-    if(player2 == "human"){
-        blackPlayer = make_unique<HumanPlayer>(Colour::BLACK);
-    } else if(player2 == "computer1"){
-        blackPlayer = make_unique<ComputerPlayer>(Colour::BLACK, 1);
-    } else if(player2 == "computer2"){
-        blackPlayer = make_unique<ComputerPlayer>(Colour::BLACK, 2);
-    } else if(player2 == "computer3"){
-        blackPlayer = make_unique<ComputerPlayer>(Colour::BLACK, 3);
-    } else{
-        blackPlayer = make_unique<ComputerPlayer>(Colour::BLACK, 4);
-    } 
+    whitePlayer = makePlayer(player1, Colour::WHITE);
+    blackPlayer = makePlayer(player2, Colour::BLACK);
 
     if(colour == Colour::WHITE){
         currentTurn = getWhitePlayer();
@@ -118,21 +97,40 @@ void Game::start(string player1, string player2, Colour colour) {
     board->printTD();
 }
 
-bool Game::isValidMove(Move move) {
-    Player *player = getCurrentTurn();
+void Game::switchTurn() {
+    currentTurn = (currentTurn == getWhitePlayer()) ? getBlackPlayer() : getWhitePlayer();
+}
 
-    if(player->getColour() == Colour::WHITE){
-        for(const auto& m : getWhiteMoves()){
-            if(m == move){
+bool Game::findLegalMove(const Move &requested, Move &found) {
+    if (!isStarted() || !requested.isValid()) return false;
+
+    vector<Move> candidates = board->getMoves(currentTurn->getColour());
+    const Move *fallback = nullptr;
+
+    for (const Move &candidate : candidates) {
+        if (!candidate.sameSquares(requested)) continue;
+
+        // A promotion has four possible moves for the same pair of squares
+        if (candidate.getMoveType() == MoveType::PROMOTION) {
+            if (requested.getPromotion() != PieceType::NONE) {
+                if (candidate.getPromotion() == requested.getPromotion()) {
+                    found = candidate;
+                    return true;
+                }
+                continue;
+            }
+            if (candidate.getPromotion() == PieceType::QUEEN) {  // queen by default
+                found = candidate;
                 return true;
             }
         }
-    } else if(player->getColour() == Colour::BLACK){
-        for(const auto& m : getBlackMoves()){
-            if(m == move){
-                return true;
-            }
-        }
+
+        if (fallback == nullptr) fallback = &candidate;
+    }
+
+    if (fallback != nullptr) {
+        found = *fallback;
+        return true;
     }
     return false;
 }
