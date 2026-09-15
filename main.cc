@@ -116,8 +116,7 @@ int main(int argc, char* argv[]){
     bool enableBonus = false;
 
     for (int i = 1; i < argc; ++i) { // start at 1 to skip the program name
-        std::string arg = argv[i];
-        if (arg == "-enableBonus") {
+        if (isBonusFlag(argv[i])) {
             enableBonus = true;
         }
     }
@@ -142,6 +141,7 @@ int main(int argc, char* argv[]){
     cout << "  - computer1 (Beginner)" << endl;
     cout << "  - computer2 (Intermediate)" << endl;
     cout << "  - computer3 (Advanced)" << endl;
+    cout << "  - computer4 (Expert)" << endl;
     cout << "--------------------------------------------------" << endl;
     cout << "To enter setup mode, type:" << endl;
     cout << "  setup" << endl;
@@ -157,17 +157,8 @@ int main(int argc, char* argv[]){
         cout << "Please enter a command." << endl;
         cin >> cmd;
         if (cin.eof()) {
-            cout << "Final score:" << endl;
-            cout << "White: " << game.getWhiteWins() << endl;
-            cout << "Black: " << game.getBlackWins() << endl;
+            printSessionScore(game);
             if(enableBonus && timer) timer->stop();
-            if(game.getWhiteWins() > game.getBlackWins()){
-                cout << "White wins the session!" << endl;
-            } else if(game.getWhiteWins() < game.getBlackWins()){
-                cout << "Black wins the session!" << endl;
-            } else {
-                cout << "Session is a draw!" << endl;
-            }
             cin.clear();
             return 0;
         }
@@ -183,11 +174,8 @@ int main(int argc, char* argv[]){
                 continue;
             }
 
-            if ((whitePlayer == "human" || whitePlayer == "computer1" || whitePlayer == "computer2" || 
-                whitePlayer == "computer3") && (blackPlayer == "human" ||
-                blackPlayer == "computer1" || blackPlayer == "computer2" || 
-                blackPlayer == "computer3")) {
-                    cout << endl;
+            if (isValidPlayerName(whitePlayer) && isValidPlayerName(blackPlayer)) {
+                cout << endl;
                 game.start(whitePlayer, blackPlayer, colour);
             } else {
                 cout << "Invalid Command, try naming the players correctly" << endl;
@@ -200,8 +188,15 @@ int main(int argc, char* argv[]){
                 cout << "Set the time limit for each player (in seconds):" << endl;
                 cout << "  (Tip: Blitz = 60, Rapid = 600, Classical = 1800+)" << endl;
                 cout << "--------------------------------------------------" << endl;
-                int time_limit;
+                int time_limit = 0;
                 cin >> time_limit;
+                if (cin.fail() || time_limit <= 0) {
+                    cin.clear();
+                    string discard;
+                    getline(cin, discard);
+                    time_limit = 600;
+                    cout << "Using the default of " << time_limit << " seconds per player." << endl;
+                }
                 timer = make_unique<Timer>(time_limit);
             }
 
@@ -217,8 +212,32 @@ int main(int argc, char* argv[]){
                 cout << endl;
             }
 
+            // A custom setup can already be finished before anybody moves
+            if (game.getBoard()->isCheckmate()) {
+                cout << "This position is already checkmate!" << endl;
+                if (game.getCurrentTurn()->getColour() == Colour::WHITE) {
+                    game.incrementBlackWins(1);
+                } else {
+                    game.incrementWhiteWins(1);
+                }
+                continue;
+            }
+            if (game.getBoard()->isStalemate()) {
+                cout << "This position is already a stalemate!" << endl;
+                game.incrementWhiteWins(0.5);
+                game.incrementBlackWins(0.5);
+                continue;
+            }
+
             // Start the timer
-            if(enableBonus) timer->start();
+            if(enableBonus && timer) timer->start();
+
+            Timer *timerPtr = enableBonus ? timer.get() : nullptr;
+
+            // When a person is playing, the computer moves on its own. In a game
+            // between two computers each move is still requested with "move".
+            bool humanInGame = game.getWhitePlayer()->usesTerminalInput() ||
+                               game.getBlackPlayer()->usesTerminalInput();
 
             // Game loop
             while(true){
