@@ -78,9 +78,10 @@ Xwindow::Xwindow(int width, int height) : width{width}, height{height} {
 }
 
 Xwindow::~Xwindow() {
+  // The font and the graphics context must be released before the display is closed
+  if (font) XUnloadFont(d, font->fid);
   XFreeGC(d, gc);
   XCloseDisplay(d);
-  if (font) XUnloadFont(d, font-> fid);
 }
 
 int Xwindow::getWidth() const { return width; }
