@@ -40,8 +40,7 @@ void Board::setPieceAt(int row, int col, Piece piece) {
 }
 
 void Board::init(vector<vector<char>> config) {
-    // Clear existing grid and observers (to prevent dangling pointers)
-    // If a grid already exists, we must detach its observers before replacing td/gd
+    // Detach the observers of any previous grid before the displays are replaced
     for (auto &row : grid) {
         for (auto &cell : row) {
             cell.detachAll();
@@ -49,97 +48,195 @@ void Board::init(vector<vector<char>> config) {
     }
 
     grid.clear();
-    grid.resize(GRID_SIZE, std::vector<Cell>(GRID_SIZE));
+    grid.resize(GRID_SIZE, vector<Cell>(GRID_SIZE));
+
+    movesPlayed.clear();
+    history.clear();
+    whiteMoves.clear();
+    blackMoves.clear();
+    epTarget = Position{};
+    epVictim = Position{};
+    posWKing = Position{};
+    posBKing = Position{};
 
     // Create displays
-    td = std::make_unique<TextDisplay>(GRID_SIZE);
-    //gd = std::make_unique<GraphicsDisplay>(GRID_SIZE);
+    td = make_unique<TextDisplay>(GRID_SIZE);
+#ifdef ENABLE_GRAPHICS
+    gd = make_unique<GraphicsDisplay>(GRID_SIZE);
+#endif
 
-    //Converting each char to info to use setCell
-    for(int i = 0; i < GRID_SIZE ;i++) {
-        for(int j = 0; j < GRID_SIZE; j++) {
-            char ch = config[i][j];
-            Position pos{i, j};
-            Colour col;
-            PieceType pt;
-
-            if(ch > 'A' && ch < 'Z')
-                col = Colour::WHITE;
-            else if (ch > 'a' && ch < 'z')
-                col = Colour::BLACK;
-            else 
-                col = Colour::NONE;
-
-            if(ch == 'k'){
-                pt = PieceType::KING;
-                posBKing = pos;
-            } else if(ch == 'K'){
-                pt = PieceType::KING;
-                posWKing = pos;
-            }else if(ch == 'q' || ch == 'Q')
-                pt = PieceType::QUEEN;
-            else if(ch == 'b' || ch == 'B')
-                pt = PieceType::BISHOP;
-            else if(ch == 'n' || ch == 'N')
-                pt = PieceType::KNIGHT;
-            else if(ch == 'r' || ch == 'R')
-                pt = PieceType::ROOK;
-            else if(ch == 'p' || ch == 'P')
-                pt = PieceType::PAWN;
-            else
-                pt = PieceType::NONE;
-
-            Info inf{pos, col, pt};
-            State state = (pt == PieceType::NONE) ? State{StateType::EmptyCell, Colour::NONE, PieceType::NONE, pos, Direction::N}
-                                                : State{StateType::Update, col, pt, pos, Direction::N};
-            grid[pos.getRowVector()][pos.getColVector()].setCell(inf, state);
-            
-            // Attach both displays as observers
-            grid[pos.getRowVector()][pos.getColVector()].attach(td.get());
-            //grid[pos.getRowVector()][pos.getColVector()].attach(gd.get());
+    // Give every cell its position and attach the displays first, so that the
+    // notifications sent while the pieces are placed actually reach them
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            Position pos{row, col};
+            grid[row][col] = Cell{pos, Piece{PieceType::NONE, Colour::NONE}};
+            grid[row][col].attach(td.get());
+#ifdef ENABLE_GRAPHICS
+            grid[row][col].attach(gd.get());
+#endif
         }
     }
 
-    // Knight move directions: (row offset, column offset)
-    const std::vector<std::pair<int, int>> knightMoves = {
-        {2, 1}, {1, 2}, {-1, 2}, {-2, 1},
-        {-2, -1}, {-1, -2}, {1, -2}, {2, -1}
-    };
+    // Convert each configuration character into a piece
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            char ch = config[row][col];
+            PieceType pt = pieceTypeFromChar(ch);
+            Colour colour = colourFromChar(ch);
+            Position pos{row, col};
 
-    for (size_t row = 0; row < GRID_SIZE; ++row) {
-        for (size_t column = 0; column < GRID_SIZE; ++column) {
-            // Attach adjacent 8 neighbors
-            for (int dr = -1; dr <= 1; ++dr) {
-                for (int dc = -1; dc <= 1; ++dc) {
-                    if (dr == 0 && dc == 0) continue;
-                    int nr = row + dr;
-                    int nc = column + dc;
-                    if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                        grid[row][column].attach(&grid[nr][nc]); // Attach in only one direction
-                    }
-                }
+            if (pt == PieceType::KING) {
+                if (colour == Colour::WHITE) posWKing = pos;
+                else posBKing = pos;
             }
 
-            // Attach knight-move neighbors
-            for (const auto& [dr, dc] : knightMoves) {
-                int nr = row + dr;
-                int nc = column + dc;
-                if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                    grid[row][column].attach(&grid[nr][nc]);
-                }
-            }
+            State state = (pt == PieceType::NONE)
+                ? State{StateType::EmptyCell, Colour::NONE, PieceType::NONE, pos, Direction::N}
+                : State{StateType::NewPiece, colour, pt, pos, Direction::N};
+            grid[row][col].setCell(Info{pos, colour, pt}, state);
         }
     }
 
-    // Set initial states for all cells
-    for (int i = 0; i < GRID_SIZE; ++i) {
-        for (int j = 0; j < GRID_SIZE; ++j) {
-            // to ensure each piece has state update or empty cell as appropriate
-            State state = (grid[i][j].getInfo().getPieceType() == PieceType::NONE) ? 
-                        State{StateType::EmptyCell, Colour::NONE, PieceType::NONE, grid[i][j].getInfo().getPosition(), Direction::N}
-                                                : State{StateType::Update, grid[i][j].getInfo().getColour(), 
-                                                    grid[i][j].getInfo().getPieceType(), grid[i][j].getInfo().getPosition(), Direction::N};
-            grid[i][j].setState(state);
+    generateAllMoves();
+}
+
+void Board::refreshDisplay() {
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            grid[row][col].notifyObservers();
+        }
+    }
+}
+
+Board::Snapshot Board::snapshot() const {
+    Snapshot snap;
+    snap.pieces.reserve(GRID_SIZE);
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        vector<Piece> pieceRow;
+        pieceRow.reserve(GRID_SIZE);
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            pieceRow.push_back(pieceAt(row, col));
+        }
+        snap.pieces.push_back(std::move(pieceRow));
+    }
+    snap.posBKing = posBKing;
+    snap.posWKing = posWKing;
+    snap.epTarget = epTarget;
+    snap.epVictim = epVictim;
+    snap.currentTurn = currentTurn;
+    return snap;
+}
+
+void Board::restore(const Snapshot &snap) {
+    for (int row = 0; row < GRID_SIZE; ++row) {
+        for (int col = 0; col < GRID_SIZE; ++col) {
+            setPieceAt(row, col, snap.pieces[row][col]);
+        }
+    }
+    posBKing = snap.posBKing;
+    posWKing = snap.posWKing;
+    epTarget = snap.epTarget;
+    epVictim = snap.epVictim;
+    currentTurn = snap.currentTurn;
+}
+
+// Executes a move without checking it. Callers must pass a generated move.
+void Board::applyMove(const Move &mv, bool countMoves) {
+    int fromRow = mv.getFrom().getRowVector();
+    int fromCol = mv.getFrom().getColVector();
+    int toRow = mv.getTo().getRowVector();
+    int toCol = mv.getTo().getColVector();
+
+    Piece mover = pieceAt(fromRow, fromCol);
+    if (countMoves) mover.incrementMoveCount();
+
+    // En passant: the captured pawn sits beside the origin square, not on the target
+    if (mv.getMoveType() == MoveType::ENPASSANT) {
+        setPieceAt(fromRow, toCol, Piece{PieceType::NONE, Colour::NONE});
+    }
+
+    setPieceAt(fromRow, fromCol, Piece{PieceType::NONE, Colour::NONE});
+
+    Piece placed = mover;
+    if (mv.getMoveType() == MoveType::PROMOTION) {
+        placed = Piece{mv.getPromotion(), mover.getColour()};
+        if (countMoves) placed.incrementMoveCount();
+    }
+    setPieceAt(toRow, toCol, placed);
+
+    // Castling also moves the rook
+    if (mv.getMoveType() == MoveType::CASTLE_KINGSIDE) {
+        Piece rook = pieceAt(fromRow, GRID_SIZE - 1);
+        if (countMoves) rook.incrementMoveCount();
+        setPieceAt(fromRow, GRID_SIZE - 1, Piece{PieceType::NONE, Colour::NONE});
+        setPieceAt(fromRow, toCol - 1, rook);
+    } else if (mv.getMoveType() == MoveType::CASTLE_QUEENSIDE) {
+        Piece rook = pieceAt(fromRow, 0);
+        if (countMoves) rook.incrementMoveCount();
+        setPieceAt(fromRow, 0, Piece{PieceType::NONE, Colour::NONE});
+        setPieceAt(fromRow, toCol + 1, rook);
+    }
+
+    // Track the kings
+    if (placed.getPieceType() == PieceType::KING) {
+        if (placed.getColour() == Colour::WHITE) posWKing = mv.getTo();
+        else posBKing = mv.getTo();
+    }
+
+    // A double pawn step creates an en passant opportunity for one move only
+    if (mover.getPieceType() == PieceType::PAWN && abs(toRow - fromRow) == 2) {
+        epTarget = Position{(toRow + fromRow) / 2, toCol};
+        epVictim = mv.getTo();
+    } else {
+        epTarget = Position{};
+        epVictim = Position{};
+    }
+}
+
+bool Board::isSquareAttacked(Position pos, Colour attacker) const {
+    if (!pos.isOnBoard() || grid.empty()) return false;
+    int row = pos.getRowVector();
+    int col = pos.getColVector();
+
+    // Knights
+    for (const auto &[dr, dc] : KNIGHT_OFFSETS) {
+        int r = row + dr, c = col + dc;
+        if (!inBounds(r, c)) continue;
+        Piece p = pieceAt(r, c);
+        if (p.getColour() == attacker && p.getPieceType() == PieceType::KNIGHT) return true;
+    }
+
+    // Enemy king on an adjacent square
+    for (const auto &[dr, dc] : KING_OFFSETS) {
+        int r = row + dr, c = col + dc;
+        if (!inBounds(r, c)) continue;
+        Piece p = pieceAt(r, c);
+        if (p.getColour() == attacker && p.getPieceType() == PieceType::KING) return true;
+    }
+
+    // Pawns: white pawns capture towards higher rows, so they stand one row below
+    int pawnRow = (attacker == Colour::WHITE) ? row - 1 : row + 1;
+    for (int dc : {-1, 1}) {
+        int c = col + dc;
+        if (!inBounds(pawnRow, c)) continue;
+        Piece p = pieceAt(pawnRow, c);
+        if (p.getColour() == attacker && p.getPieceType() == PieceType::PAWN) return true;
+    }
+
+    // Rooks and queens along ranks and files
+    for (const auto &[dr, dc] : ROOK_DIRECTIONS) {
+        int r = row + dr, c = col + dc;
+        while (inBounds(r, c)) {
+            Piece p = pieceAt(r, c);
+            if (p.getPieceType() != PieceType::NONE) {
+                if (p.getColour() == attacker &&
+                    (p.getPieceType() == PieceType::ROOK || p.getPieceType() == PieceType::QUEEN))
+                    return true;
+                break;
+            }
+            r += dr;
+            c += dc;
         }
     }
 
