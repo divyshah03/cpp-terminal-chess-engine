@@ -50,6 +50,6 @@ std::ostream& operator<<(std::ostream &out, PieceType pt){
         case PieceType::KNIGHT: return out << "Knight";
         case PieceType::PAWN:   return out << "Pawn";
         case PieceType::NONE:   return out << "None";
-        default:                return out << "Should not reach this case";
     }
+    return out << "Unknown";
 }
