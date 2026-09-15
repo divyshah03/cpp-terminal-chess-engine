@@ -64,26 +64,36 @@ class Board {
     void generateAllMoves();
 
     public:
-    void init(std::vector<std::vector<char>> config);  // places the pieces on an empty board
-                                                       // attach observers; neighbours plus displays
+    Board();
+    void init(std::vector<std::vector<char>> config);  // places the pieces and attaches displays
     bool movePiece(Move mv);
+    bool undoMove();                                   // take back the last move
 
-    bool isCheck();
-    bool isCheckmate();
-    bool isStalemate();
+    bool isCheck() const;                              // is the side to move in check?
+    bool isCheck(Colour side) const;
+    bool isCheckmate() const;
+    bool isStalemate() const;
+    bool isSquareAttacked(Position pos, Colour attacker) const;
+
+    // "What if" helpers used by the computer players. Each one plays the move on
+    // a scratch copy of the position and puts everything back afterwards.
+    bool wouldGiveCheck(const Move &mv);
+    bool isAttackedAfter(const Move &mv, Position pos, Colour attacker);
+    int opponentReplyCount(const Move &mv);
 
     void setCurrentTurn(Colour colour);
-    Colour getCurrentTurn();
+    Colour getCurrentTurn() const;
     void pushMove(Move mv);
     Move popMove();
 
-    const std::vector<std::vector<Cell>>& getGrid();
-    std::vector<Move> getBlackMoves();
-    std::vector<Move> getWhiteMoves();
-    Position getBKing();
-    Position getWKing();
+    const std::vector<std::vector<Cell>>& getGrid() const;
+    std::vector<Move> getBlackMoves() const;
+    std::vector<Move> getWhiteMoves() const;
+    std::vector<Move> getMoves(Colour side) const;
+    Position getBKing() const;
+    Position getWKing() const;
 
-    void printTD();
+    void printTD() const;
 };
 
 #endif
