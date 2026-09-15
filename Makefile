@@ -16,11 +16,11 @@ endif
 DEPENDS = ${OBJECTS:.o=.d}
 
 ${EXEC}: ${OBJECTS}
-	${CXX} ${CXXFLAGS} ${OBJECTS} -o ${EXEC} 
+	${CXX} ${CXXFLAGS} ${OBJECTS} -o ${EXEC} ${LDFLAGS}
 
 -include ${DEPENDS}
 
 .PHONY: clean
 
 clean:
-	rm ${OBJECTS} ${EXEC} ${DEPENDS}
+	rm -f ${OBJECTS} ${EXEC} ${DEPENDS}
