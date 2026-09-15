@@ -14,7 +14,10 @@ class Game {
     std::unique_ptr<Player> blackPlayer;
     double whiteWins = 0;
     double blackWins = 0;
-    bool isValidMove(Move move);
+    // Finds the generated legal move that matches what was requested, so that
+    // castling, en passant and promotion are executed correctly
+    bool findLegalMove(const Move &requested, Move &found);
+    void switchTurn();
     static const std::vector<std::vector<char>> DEFAULT_CONFIG;
 
     public:
