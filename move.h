@@ -7,6 +7,8 @@ class Move {
     Position from;
     Position to;
     PieceType pieceCaptured;
+    MoveType type;
+    PieceType promotion;
 
     public:
     Move(); // Default constructor that creates an invalid move
