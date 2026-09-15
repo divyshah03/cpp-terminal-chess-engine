@@ -11,7 +11,7 @@ A terminal based chess game written in modern C++20. Play a friend, play the com
 - 📜 Standard chess rules: check, checkmate, stalemate, en passant, castling, and promotion
 - 🛠️ Command-line setup mode for custom board configuration
 - ↩️ Undo, to take back the last move
-- ⏱️ Optional timer for each player, with any time control you like
+- ⏱️ Optional countdown timer for each player, started with `./chess -bonus`; a player who runs out of time loses
 - 🧑‍🤝‍🧑 Human vs Human, and 🤖 Human vs Computer with four difficulty levels
 - 🧠 Uses smart pointers everywhere possible
 
@@ -68,14 +68,78 @@ standard test positions:
 | 🏁 Starting position | 20 | 400 | 8,902 | 197,281 |
 | 🧨 "Kiwipete" (castling and en passant stress test) | 48 | 2,039 | 97,862 | — |
 
-- `+ K e1` — Add a white king to square e1  
-- `- d7` — Remove a piece from square d7  
-- `= white` — Set the current turn to white  
-- `= black` — Set the current turn to black  
-- `done` — Exit setup mode and start the game  
+---
 
+## 🕹️ Gameplay Commands
+
+| Command | What it does |
+|---|---|
+| `game human human` | 🧑‍🤝‍🧑 Start a game between two human players |
+| `game human computer2` | 🤖 Start a game against the computer (levels 1–4) |
+| `move e2 e4` | ♟️ Move a piece from e2 to e4 |
+| `move e7 e8 Q` | 👑 Move and choose a promotion piece (`Q`, `R`, `B` or `N`; queen if left out) |
+| `undo` | ↩️ Take back the last move |
+| `resign` | 🏳️ Resign the game |
+| `setup` | 🛠️ Enter setup mode to customize the board |
+| `help` | 🆘 Show the commands available |
+| `Ctrl + D` | 📊 Print the session score and quit |
+
+🤖 When you play against the computer it moves by itself, so you only enter your own
+moves. In a game between two computers, each `move` command plays one turn.
+Against the computer, `undo` takes back both its reply and your move, so the turn
+comes back to you.
+
+### 🎬 A session to get you started
+
+```
+game human computer2
+move e2 e4
+move d2 d4
+undo
+```
+
+---
+
+## 🤖 Computer Levels
+
+The computer players use handwritten heuristics, no external engine:
+
+- 🎲 `computer1` — plays a random legal move
+- ⚔️ `computer2` — prefers captures of valuable pieces, promotions and checks
+- 🛡️ `computer3` — also avoids moving onto squares the opponent attacks
+- 🧠 `computer4` — also saves pieces that are already under attack and limits the opponent's replies
+
+---
+
+## 🛠️ Setup Mode Commands
+
+| Command | What it does |
+|---|---|
+| `+ K e1` | ➕ Add a white king to e1 (uppercase is white, lowercase is black) |
+| `- d7` | ➖ Remove the piece on d7 |
+| `= white` | ⚪ Set the current turn to white |
+| `= black` | ⚫ Set the current turn to black |
+| `done` | ✔️ Leave setup mode |
+
+⚠️ A setup is accepted only when there is exactly one king of each colour, no pawns
+on the first or last row, and neither king is already under attack.
+
+---
+
+## 🗂️ Project Layout
+
+| Area | Files |
+|---|---|
+| 🚪 Entry point and command loop | `main.cc` |
+| 🎯 Match and session state | `game.h`, `game.cc` |
+| 📐 Rules, move generation, board state | `board`, `cell`, `piece`, `move`, `position` |
+| 🕹️ Players | `player`, `humanPlayer`, `computerPlayer` |
+| 📡 Observer plumbing | `subject`, `observer`, `state`, `info` |
+| 🖼️ Displays | `textDisplay`, `graphicsDisplay`, `window` |
+| ⏱️ Timer | `timer` |
+
+---
 
 ## 🧑‍💻 Authors
 
-This project was built by Divy, Kshaman and Siddh.
-
+This project was built by Divy, Kshaman and Siddh. 🙌
