@@ -36,6 +36,8 @@ class Game {
     void start(std::string player1, std::string player2, Colour colour);
     bool isSetupValid();
     bool gameMove();
+    bool undoMove();
+    bool isStarted() const;
 };
 
 #endif
