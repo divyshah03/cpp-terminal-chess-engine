@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <string>
 #include "game.h"
@@ -50,12 +51,25 @@ Board *Game::getBoard() {
     return board.get();
 }
 
+bool Game::isStarted() const {
+    return (board != nullptr && currentTurn != nullptr);
+}
+
 vector<Move> Game::getBlackMoves() {
     return board->getBlackMoves();
 }
 
 vector<Move> Game::getWhiteMoves() {
     return board->getWhiteMoves();
+}
+
+// Creates a player from a command line name; unknown names become a level 1 computer
+static unique_ptr<Player> makePlayer(const string &name, Colour colour) {
+    if (name == "human")     return make_unique<HumanPlayer>(colour);
+    if (name == "computer2") return make_unique<ComputerPlayer>(colour, 2);
+    if (name == "computer3") return make_unique<ComputerPlayer>(colour, 3);
+    if (name == "computer4") return make_unique<ComputerPlayer>(colour, 4);
+    return make_unique<ComputerPlayer>(colour, 1);
 }
 
 void Game::start(string player1, string player2, Colour colour) {
