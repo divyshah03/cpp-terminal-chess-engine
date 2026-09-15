@@ -1,9 +1,43 @@
 #include "board.h"
+#include <cstdlib>
+#include <iostream>
 #include <memory>
+#include <utility>
 
 using namespace std;
 
-const int GRID_SIZE = 8;
+static const int GRID_SIZE = 8;
+
+static const vector<pair<int,int>> KNIGHT_OFFSETS = {
+    {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2}, {1, -2}, {2, -1}
+};
+static const vector<pair<int,int>> KING_OFFSETS = {
+    {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
+};
+static const vector<pair<int,int>> ROOK_DIRECTIONS = {
+    {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+};
+static const vector<pair<int,int>> BISHOP_DIRECTIONS = {
+    {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+};
+
+Board::Board() : currentTurn{Colour::WHITE} {}
+
+bool Board::inBounds(int row, int col) {
+    return (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE);
+}
+
+Piece Board::pieceAt(int row, int col) const {
+    return grid[row][col].getPiece();
+}
+
+bool Board::isEmpty(int row, int col) const {
+    return (pieceAt(row, col).getPieceType() == PieceType::NONE);
+}
+
+void Board::setPieceAt(int row, int col, Piece piece) {
+    grid[row][col].setPiece(piece);
+}
 
 void Board::init(vector<vector<char>> config) {
     // Clear existing grid and observers (to prevent dangling pointers)
