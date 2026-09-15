@@ -12,7 +12,7 @@ Colour Piece::getColour() const {
     return colour;
 }
 
-bool Piece::hasMoved() {
+bool Piece::hasMoved() const {
     return (moveCount > 0);
 }
 
