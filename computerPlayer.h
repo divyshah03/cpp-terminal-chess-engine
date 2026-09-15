@@ -9,6 +9,7 @@
 
 class ComputerPlayer : public Player {
     int level;
+    int scoreMove(Board *board, const Move &mv) const;
 
   public:
     ComputerPlayer(Colour colour, int level);
