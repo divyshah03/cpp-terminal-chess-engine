@@ -52,6 +52,11 @@ void Position::setRowInt(int newR){
     row = newR;
 }
 
+// True when this position refers to a real square (a1 - h8)
+bool Position::isOnBoard() const{
+    return (row >= 1 && row <= 8 && col >= 1 && col <= 8);
+}
+
 bool Position::operator==(const Position& other) const{
     return (row == other.getRow() && col == other.getColInt());
 }
