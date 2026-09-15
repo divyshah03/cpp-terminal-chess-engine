@@ -1,5 +1,6 @@
-CXX = g++-14
+CXX ?= g++
 CXXFLAGS = -std=c++20 -Wall -MMD -Werror=vla
+LDFLAGS =
 EXEC = chess
 OBJECTS = board.o cell.o computerPlayer.o enumerated.o game.o \
           humanPlayer.o info.o main.o move.o \
