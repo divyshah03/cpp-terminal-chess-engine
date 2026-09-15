@@ -36,38 +36,37 @@ A terminal based chess game written in modern C++20. Play a friend, play the com
 
 ---
 
-### ♟️ Supported Chess Mechanics
+## ♟️ Supported Chess Mechanics
 
-Our chess engine fully implements the rules of standard chess, including:
+Our chess engine implements the rules of standard chess, including:
 
 - ⛳️ **Check and Checkmate Detection**  
-  The game automatically checks for check and checkmate and prevents illegal moves that would leave a king in check.
+  The game detects check and checkmate, and refuses any move that would leave your own king in check. Pinned pieces cannot move out of the pin.
 
-- ⛳️ **Stalemate Handling**  
+- 🤝 **Stalemate Handling**  
   If a player has no legal moves but is not in check, the game correctly declares a stalemate (draw).
 
-- ⛳️ **Castling**  
+- 🏰 **Castling**  
   Both kingside and queenside castling are supported, provided all rules are satisfied:
   - Neither the king nor the rook involved has moved.
   - The squares between them are empty.
   - The king is not in check, and does not pass through or land on a square under attack.
 
-- ⛳️ **En Passant**  
+- 👻 **En Passant**  
   En passant captures are supported immediately after a pawn moves two squares forward from its starting rank and lands beside an enemy pawn.
 
-- ⛳️ **Pawn Promotion**  
-  When a pawn reaches the opposite end of the board, it can be promoted to a queen, rook, bishop, or knight.
+- 👑 **Pawn Promotion**  
+  When a pawn reaches the opposite end of the board, it is promoted to a queen, rook, bishop, or knight.
 
-### 🕹️ Gameplay Commands
+### ✅ Verified Move Generation
 
-- `game white human black human` — Start a game between two human players  
-- `game white human black computer[1-4]` — Start a game against AI of level 1–4  
-- `move e2 e4` — Move a piece from e2 to e4  
-- `resign` — Resign the game  
-- `setup` — Enter setup mode to customize the board  
-- `help` - Gives the player help on the commands available
+The move generator is checked against the published move counts (perft) for the
+standard test positions:
 
-### 🔧 Setup Mode Commands
+| Position | Depth 1 | Depth 2 | Depth 3 | Depth 4 |
+|---|---|---|---|---|
+| 🏁 Starting position | 20 | 400 | 8,902 | 197,281 |
+| 🧨 "Kiwipete" (castling and en passant stress test) | 48 | 2,039 | 97,862 | — |
 
 - `+ K e1` — Add a white king to square e1  
 - `- d7` — Remove a piece from square d7  
